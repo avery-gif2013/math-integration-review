@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculus II: Advanced Integration & Series Review</title>
+    <style>
+        body { font-family: 'Times New Roman', Times, serif; line-height: 1.6; margin: 40px auto; max-width: 800px; padding: 0 20px; color: #333; background: #fff; }
+        h1 { border-bottom: 2px solid #333; padding-bottom: 10px; font-size: 24px; }
+        h2 { font-size: 18px; margin-top: 30px; }
+        .equation { font-style: italic; background: #f9f9f9; padding: 10px; border-left: 3px solid #ccc; margin: 15px 0; font-family: monospace; }
+        
+        /* HIDDEN ZONE STYLE */
+        .hidden-zone { display: none; text-align: center; margin-top: 20px; font-family: 'Arial', sans-serif; }
+        
+        /* 2048 GAME BOARD CSS */
+        #game-container { width: 340px; margin: 20px auto; background-color: #bbada0; border-radius: 6px; padding: 15px; position: relative; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-gap: 10px; }
+        .cell { width: 70px; height: 70px; background-color: rgba(238, 228, 218, 0.35); border-radius: 3px; font-size: 24px; font-weight: bold; line-height: 70px; text-align: center; color: #776e65; }
+        /* Tile Colors */
+        .tile-2 { background-color: #eee4da; }
+        .tile-4 { background-color: #ede0c8; }
+        .tile-8 { background-color: #f2b179; color: #f9f6f2; }
+        .tile-16 { background-color: #f59563; color: #f9f6f2; }
+        .tile-32 { background-color: #f67c5f; color: #f9f6f2; }
+        .tile-64 { background-color: #f65e3b; color: #f9f6f2; }
+        .tile-128 { background-color: #edcf72; color: #f9f6f2; font-size: 20px; }
+        .tile-256 { background-color: #edcc61; color: #f9f6f2; font-size: 20px; }
+        .tile-512 { background-color: #edc850; color: #f9f6f2; font-size: 20px; }
+        .tile-1024 { background-color: #edc53f; color: #f9f6f2; font-size: 16px; }
+        .tile-2048 { background-color: #edc22e; color: #f9f6f2; font-size: 16px; }
+        #score-display { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- DISGUISE LAYER -->
+    <div id="math-document">
+        <h1>Department of Mathematics: Calculus II Review</h1>
+        <p><strong>Module 4:</strong> Integration Techniques and Infinite Series Convergence Tests.</p>
+        <h2>1. Integration by Parts</h2>
+        <div class="equation">∫ u dv = uv - ∫ v du</div>
+        <h2>2. Taylor and Maclaurin Series</h2>
+        <div class="equation">f(x) = f(a) + f'(a)(x-a) + (f''(a)/2!)(x-a)² + ...</div>
+        <p>Please review these theorems before the examination on Friday morning.</p>
+    </div>
+
+    <!-- ARCADE LAYER -->
+    <div id="game-zone" class="hidden-zone">
+        <h2>Matrix Probability Practice (2048)</h2>
+        <p style="font-size: 12px; color: #666;">Use your <b>Arrow Keys</b> to shift values. Press <b>Esc</b> to lock instantly.</p>
+        <div id="score-display">Score: <span id="score">0</span></div>
+        <div id="game-container">
+            <div class="grid" id="grid"></div>
+        </div>
+    </div>
+
+    <script>
+        let inputBuffer = "";
+        let board = Array(16).fill(0);
+        let score = 0;
+        let gameActive = false;
+
+        // Code trigger tracking
+        document.addEventListener("keydown", function(e) {
+            // EMERGENCY PANIC BUTTON: Press Escape to lock instantly
+            if (e.key === "Escape") {
+                document.getElementById("game-zone").style.display = "none";
+                document.getElementById("math-document").style.display = "block";
+                inputBuffer = "";
+                return; // Stop processing other keys
+            }
+
+            inputBuffer += e.key.toLowerCase();
+            if (inputBuffer.length > 10) inputBuffer = inputBuffer.substring(inputBuffer.length - 10);
+            
+            // Check for the keyword "secret"
+            if (inputBuffer.includes("secret")) {
+                inputBuffer = ""; // Reset buffer immediately
+                
+                let accessPassword = prompt("Authentication required. Enter system key:");
+                
+                if (accessPassword === "password123") {
+                    document.getElementById("math-document").style.display = "none";
+                    document.getElementById("game-zone").style.display = "block";
+                    if(!gameActive) { initGame(); gameActive = true; }
+                } else if (accessPassword !== null) {
+                    alert("Invalid credential token.");
+                }
+            } 
+            // Secondary type-to-hide trigger remains active as backup
+            else if (inputBuffer.includes("math")) {
+                document.getElementById("game-zone").style.display = "none";
+                document.getElementById("math-document").style.display = "block";
+                inputBuffer = "";
+            }
+
+            if (gameActive && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+                e.preventDefault(); // Stop page from scrolling
+                handleMove(e.key);
+            }
+        });
+
+        function initGame() {
+            board = Array(16).fill(0);
+            score = 0;
+            addTile(); addTile();
+            renderBoard();
+        }
+
+        function addTile() {
+            let empties = board.map((v, i) => v === 0 ? i : null).filter(v => v !== null);
+            if (empties.length > 0) {
+                let idx = empties[Math.floor(Math.random() * empties.length)];
+                board[idx] = Math.random() > 0.1 ? 2 : 4;
+            }
+        }
+
+        function renderBoard() {
+            const grid = document.getElementById("grid");
+            grid.innerHTML = "";
+            board.forEach(val => {
+                let cell = document.createElement("div");
+                cell.className = "cell" + (val > 0 ? ` tile-${val}` : "");
+                cell.innerText = val > 0 ? val : "";
+                grid.appendChild(cell);
+            });
+            document.getElementById("score").innerText = score;
+        }
+
+        function handleMove(key) {
+            let moved = false;
+            if (key === "ArrowLeft") moved = slideLeft();
+            if (key === "ArrowRight") moved = slideRight();
+            if (key === "ArrowUp") moved = slideUp();
+            if (key === "ArrowDown") moved = slideDown();
+
+            if (moved) {
+                addTile();
+                renderBoard();
+            }
+        }
+
+        function slideRow(row) {
+            let arr = row.filter(val => val);
+            for (let i = 0; i < arr.length - 1; i++) {
+                if (arr[i] === arr[i + 1]) {
+                    arr[i] *= 2;
+                    score += arr[i];
+                    arr.splice(i + 1, 1);
+                }
+            }
+            while (arr.length < 4) arr.push(0);
+            return arr;
+        }
+
+        function slideLeft() {
+            let changed = false;
+            for (let i = 0; i < 4; i++) {
+                let start = i * 4;
+                let row = board.slice(start, start + 4);
+                let next = slideRow(row);
+                if (JSON.stringify(row) !== JSON.stringify(next)) changed = true;
+                board.splice(start, 4, ...next);
+            }
+            return changed;
+        }
+
+        function slideRight() {
+            let changed = false;
+            for (let i = 0; i < 4; i++) {
+                let start = i * 4;
+                let row = board.slice(start, start + 4).reverse();
+                let next = slideRow(row).reverse();
+                if (JSON.stringify(board.slice(start, start + 4)) !== JSON.stringify(next)) changed = true;
+                board.splice(start, 4, ...next);
+            }
+            return changed;
+        }
+
+        function rotateBoard() {
+            let next = Array(16).fill(0);
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    next[c * 4 + (3 - r)] = board[r * 4 + c];
+                }
+            }
+            board = next;
+        }
+
+        function slideUp() {
+            rotateBoard(); rotateBoard(); rotateBoard();
+            let moved = slideLeft();
+            rotateBoard();
+            return moved;
+        }
+
+        function slideDown() {
+            rotateBoard();
+            let moved = slideLeft();
+            rotateBoard(); rotateBoard(); rotateBoard();
+            return moved;
+        }
+    </script>
+</body>
+</html>
